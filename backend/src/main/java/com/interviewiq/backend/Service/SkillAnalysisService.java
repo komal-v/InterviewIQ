@@ -3,28 +3,101 @@ package com.interviewiq.backend.Service;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-
+import java.util.regex.Pattern;
 @Service
 public class SkillAnalysisService {
 
-    private static final List<String> SKILLS = List.of(
-            "Java",
-            "Spring Boot",
-            "React",
-            "TypeScript",
-            "JavaScript",
-            "AWS",
-            "Azure",
-            "Docker",
-            "Kubernetes",
-            "Kafka",
-            "Microservices",
-            "SQL",
-            "Terraform",
-            "REST APIs",
-            "Git",
-            "Python"
-    );
+    private static final Map<String, List<String>> SKILL_ALIASES = createSkillAliases();
+
+    private static Map<String, List<String>> createSkillAliases() {
+
+        Map<String, List<String>> skills = new LinkedHashMap<>();
+
+        skills.put("Java", List.of(
+                "java"));
+
+        skills.put("Spring Boot", List.of(
+                "spring boot",
+                "springboot"));
+
+        skills.put("React", List.of(
+                "react",
+                "reactjs",
+                "react.js"));
+
+        skills.put("TypeScript", List.of(
+                "typescript"));
+
+        skills.put("JavaScript", List.of(
+                "javascript",
+                "js"));
+
+        skills.put("AWS", List.of(
+                "aws",
+                "amazon web services"));
+
+        skills.put("Docker", List.of(
+                "docker"));
+
+        skills.put("Kubernetes", List.of(
+                "kubernetes",
+                "k8s"));
+
+        skills.put("Kafka", List.of(
+                "kafka",
+                "apache kafka"));
+
+        skills.put("Microservices", List.of(
+                "microservices",
+                "microservice architecture"));
+
+        skills.put("SQL", List.of(
+                "sql"));
+
+        skills.put("Terraform", List.of(
+                "terraform"));
+
+        skills.put("REST APIs", List.of(
+                "rest api",
+                "rest apis",
+                "restful api",
+                "restful apis"));
+
+        skills.put("Git", List.of(
+                "git",
+                "github"));
+
+        skills.put("Python", List.of(
+                "python"));
+
+        skills.put("PostgreSQL", List.of(
+                "postgresql",
+                "postgres"));
+
+        return skills;
+    }
+
+    private boolean containsAny(
+        String text,
+        List<String> aliases) {
+
+    for (String alias : aliases) {
+
+        String pattern =
+                "\\b"
+                + Pattern.quote(alias)
+                + "\\b";
+
+        if (Pattern.compile(pattern)
+                .matcher(text)
+                .find()) {
+
+            return true;
+        }
+    }
+
+    return false;
+}
 
     public Map<String, Object> analyze(
             String resumeText,
@@ -37,24 +110,25 @@ public class SkillAnalysisService {
         List<String> matchedSkills = new ArrayList<>();
         List<String> skillGaps = new ArrayList<>();
 
-        for (String skill : SKILLS) {
+        for (Map.Entry<String, List<String>> entry : SKILL_ALIASES.entrySet()) {
 
-            String normalizedSkill = skill.toLowerCase();
+            String skill = entry.getKey();
+            List<String> aliases = entry.getValue();
 
-            // Is this skill required by the job?
-            if (job.contains(normalizedSkill)) {
+            boolean required = containsAny(job, aliases);
 
-                requiredSkills.add(skill);
+            if (!required) {
+                continue;
+            }
 
-                // Does the resume contain it?
-                if (resume.contains(normalizedSkill)) {
-                    matchedSkills.add(skill);
-                } else {
-                    skillGaps.add(skill);
-                }
+            requiredSkills.add(skill);
+
+            if (containsAny(resume, aliases)) {
+                matchedSkills.add(skill);
+            } else {
+                skillGaps.add(skill);
             }
         }
-
         int score = 0;
 
         if (!requiredSkills.isEmpty()) {
